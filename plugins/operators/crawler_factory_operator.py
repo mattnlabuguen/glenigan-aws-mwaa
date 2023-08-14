@@ -10,7 +10,8 @@ class CrawlerFactoryOperator(BaseOperator):
 
     def execute(self):
         crawling_strategy = get_crawling_strategy(self.website_name)
-        url_list = crawling_strategy.crawl(max_pages=10)
+
+        return crawling_strategy
 
 
 c = CrawlerFactoryOperator(
