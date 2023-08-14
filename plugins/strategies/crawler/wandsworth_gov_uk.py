@@ -154,7 +154,8 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
         current_date_time = datetime.now()
         six_months_ago = current_date_time - timedelta(days=6 * 30)
 
-        default_form_data = f'__VIEWSTATE={quote_plus(viewstate)}&__VIEWSTATEGENERATOR={quote_plus(viewstate_generator)}' \
+        default_form_data = f'__VIEWSTATE={quote_plus(viewstate)}' \
+                            f'&__VIEWSTATEGENERATOR={quote_plus(viewstate_generator)}' \
                             f'&__EVENTVALIDATION={quote_plus(event_validation)}' \
                             f'&txtApplicationNumber=&txtApplicantName=&txtAgentName=&cboStreetReferenceNumber=' \
                             f'&txtProposal=&edrDateSelection=&cboWardCode=&cboParishCode=&cboApplicationTypeCode=' \
@@ -219,7 +220,7 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
                 'document_data': None,
                 'source': url
             }
-            document_url = None
+            document_urls = None
             document_data = None
             application_main_data = self.download(url)
             if application_main_data:

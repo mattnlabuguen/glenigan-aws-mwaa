@@ -31,6 +31,7 @@ class WandsworthGovUkParsingStrategy(ParsingStrategy):
             main_details_soup = None
             dates_soup = None
             document = None
+            application_number = None
 
             if 'main_details_data' in raw_data and raw_data['main_details_data']:
                 main_details_soup = BeautifulSoup(raw_data['main_details_data'], 'lxml')
@@ -79,7 +80,8 @@ class WandsworthGovUkParsingStrategy(ParsingStrategy):
 
         return data_list
 
-    def get_document_values(self, document, pattern: str) -> str:
+    @staticmethod
+    def get_document_values(document, pattern: str) -> str:
         value = Defaults.NOT_FOUND.value
         try:
             page_text = ' '.join([page.extract_text() for page in document.pages]).strip()
@@ -95,7 +97,8 @@ class WandsworthGovUkParsingStrategy(ParsingStrategy):
 
         return value
 
-    def get_table_value(self, soup, column_name: str) -> str:
+    @staticmethod
+    def get_table_value(soup, column_name: str) -> str:
         value = Defaults.NOT_FOUND.value
         soup_copy = copy.deepcopy(soup)
         try:
@@ -116,7 +119,7 @@ class WandsworthGovUkParsingStrategy(ParsingStrategy):
 
         return value
 
-    def get_decision_values(self, soup) -> list:
+    def get_decision_values(self, soup):
         decision_text = Defaults.NOT_FOUND.value
         decision_date = Defaults.NOT_FOUND.value
 

@@ -26,7 +26,6 @@ def get_parsing_strategy(website_name: str):
         mapping = json.load(file)
         file_name = mapping[website_name]
 
-
     try:
         module = importlib.import_module(f'plugins.strategies.parser.{file_name}')
         class_name = f"{''.join([element.capitalize() for element in file_name.split('_')])}ParsingStrategy"

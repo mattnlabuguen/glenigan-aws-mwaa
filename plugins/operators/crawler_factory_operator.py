@@ -8,7 +8,7 @@ class CrawlerFactoryOperator(BaseOperator):
         super().__init__(*args, **kwargs)
         self.website_name = website_name
 
-    def execute(self):
+    def execute(self, **kwargs):
         crawling_strategy = get_crawling_strategy(self.website_name)
 
         return crawling_strategy
