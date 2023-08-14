@@ -5,7 +5,7 @@ from urllib.parse import urlencode, quote_plus
 
 from bs4 import BeautifulSoup
 
-from .crawler import CrawlingStrategy
+from plugins.strategies.crawler.crawler import CrawlingStrategy
 from plugins.strategies.downloader.default_downloader import DefaultDownloader
 from plugins.strategies.utils.bs4_utils import clean_href, get_application_href
 
