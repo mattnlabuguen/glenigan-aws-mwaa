@@ -6,11 +6,11 @@ import re
 from bs4 import BeautifulSoup
 from PyPDF2 import PdfReader
 
-import parser
-from defaults import Defaults
+from .parser import ParsingStrategy
+from .defaults import Defaults
 
 
-class WandsworthGovUkParsingStrategy(parser.ParsingStrategy):
+class WandsworthGovUkParsingStrategy(ParsingStrategy):
     def __init__(self):
         self.data_template = {
             'council_decision': Defaults.NOT_FOUND.value, 'application_number': Defaults.NOT_FOUND.value,
