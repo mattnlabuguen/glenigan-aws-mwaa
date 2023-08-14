@@ -4,12 +4,12 @@ from requests.exceptions import HTTPError, ConnectionError
 import urllib3
 from retrying import retry
 
-from downloader import DownloaderStrategy
+import downloader
 
 urllib3.disable_warnings()
 
 
-class DefaultDownloader(DownloaderStrategy):
+class DefaultDownloader(downloader.DownloaderStrategy):
     max_retries = 5
     retry_delay = 5000  # In milliseconds
 

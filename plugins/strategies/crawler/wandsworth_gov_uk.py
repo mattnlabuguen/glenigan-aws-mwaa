@@ -5,12 +5,12 @@ from urllib.parse import urlencode, quote_plus
 
 from bs4 import BeautifulSoup
 
-from crawler import CrawlingStrategy
+import crawler
 from plugins.strategies.downloader.default_downloader import DefaultDownloader
 from plugins.strategies.utils.bs4_utils import clean_href, get_application_href
 
 
-class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
+class WandsworthGovUkCrawlingStrategy(crawler.CrawlingStrategy):
     def __init__(self):
         self.downloader = DefaultDownloader()
         self.base_application_url = 'https://planning.wandsworth.gov.uk/Northgate/PlanningExplorer/Generic/'
