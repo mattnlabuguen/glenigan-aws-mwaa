@@ -2,7 +2,7 @@ import importlib
 import json
 import os
 
-RELATIVE_MAPPING_PATH = "../strategies/mapping.json"
+RELATIVE_MAPPING_PATH = "/scripts/strategies/mapping.json"
 
 
 def get_crawling_strategy(website_name: str):
