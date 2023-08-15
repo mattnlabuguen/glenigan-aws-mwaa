@@ -1,7 +1,7 @@
 from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 
-from scripts.strategies.utils.strategy_utils import get_parsing_strategy, get_crawling_strategy
+from glenigan_aws_mwaa.scripts.strategies.utils.strategy_utils import get_parsing_strategy, get_crawling_strategy
 
 default_args = {
     'owner': 'BCI Central'
