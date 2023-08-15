@@ -5,9 +5,9 @@ from urllib.parse import urlencode, quote_plus
 
 from bs4 import BeautifulSoup
 
-from plugins.strategies.crawler.crawler import CrawlingStrategy
-from plugins.strategies.downloader.default_downloader import DefaultDownloader
-from plugins.strategies.utils.bs4_utils import clean_href, get_application_href
+from scripts.strategies.crawler.crawler import CrawlingStrategy
+from scripts.strategies.downloader.default_downloader import DefaultDownloader
+from scripts.strategies.utils.bs4_utils import clean_href, get_application_href
 
 
 class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):

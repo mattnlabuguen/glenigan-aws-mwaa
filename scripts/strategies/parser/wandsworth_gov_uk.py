@@ -6,8 +6,8 @@ import re
 from bs4 import BeautifulSoup
 from PyPDF2 import PdfReader
 
-from plugins.strategies.parser.parser import ParsingStrategy
-from plugins.strategies.parser.defaults import Defaults
+from scripts.strategies.parser.parser import ParsingStrategy
+from scripts.strategies.parser.defaults import Defaults
 
 
 class WandsworthGovUkParsingStrategy(ParsingStrategy):
