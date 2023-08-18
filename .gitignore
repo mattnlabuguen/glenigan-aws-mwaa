@@ -7,3 +7,4 @@ dags/**/*.pyc
 .DS_Store
 *.pyc
 /venv
+plugins/scripts/output/

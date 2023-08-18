@@ -6,44 +6,26 @@ import re
 from bs4 import BeautifulSoup
 from PyPDF2 import PdfReader
 
-from scripts.strategies.parser.parser import ParsingStrategy
+from scripts.strategies.base.parser import ParsingStrategy
 from scripts.strategies.parser.defaults import Defaults
 
 
 class WandsworthGovUkParsingStrategy(ParsingStrategy):
-    def __init__(self):
-        self.data_template = {
-            'council_decision': Defaults.NOT_FOUND.value, 'application_number': Defaults.NOT_FOUND.value,
-            'application_type': Defaults.NOT_FOUND.value, 'site_address': Defaults.NOT_FOUND.value,
-            'proposal': Defaults.NOT_FOUND.value, 'appeal_submitted': Defaults.NOT_FOUND.value,
-            'appeal_decision': Defaults.NOT_FOUND.value, 'appeal_date_lodged': Defaults.NOT_FOUND.value,
-            'appeal_decision_date': Defaults.NOT_FOUND.value, 'received': Defaults.NOT_FOUND.value,
-            'registered': Defaults.NOT_FOUND.value, 'decision_expiry': Defaults.NOT_FOUND.value,
-            'easting': Defaults.NOT_FOUND.value, 'northing': Defaults.NOT_FOUND.value,
-            'planning_portal_reference': Defaults.NOT_FOUND.value, 'source': None
-        }
-
-    def parse(self, raw_data_list: list):
-        data_list = []
-        for raw_data in raw_data_list:
-            data = copy.deepcopy(self.data_template)
-
+    def parse(self, raw_data: dict):
+        data = {}
+        try:
             main_details_soup = None
             dates_soup = None
             document = None
-            application_number = None
 
             if 'main_details_data' in raw_data and raw_data['main_details_data']:
                 main_details_soup = BeautifulSoup(raw_data['main_details_data'], 'lxml')
                 application_number = None if not main_details_soup \
                     else self.get_table_value(main_details_soup, 'Application Number')
-
-                # Uncomment for testing specific application numbers
-                # if application_number not in ['2023/2441']:
-                #     logging.info(f'Skipping Application Number: {application_number}')
-                #     continue
-
-                logging.info(f'Parsing through Application Number: {application_number}')
+                if application_number:
+                    logging.info(f'Parsing through Application Number: {application_number}')
+                else:
+                    raise
 
             if 'dates_data' in raw_data and raw_data['dates_data']:
                 dates_soup = BeautifulSoup(raw_data['dates_data'], 'lxml')
@@ -56,29 +38,32 @@ class WandsworthGovUkParsingStrategy(ParsingStrategy):
                 data['source'] = raw_data['source']
 
             if main_details_soup:
-                data['application_number'] = application_number
-                data['appeal_decision'], data['appeal_decision_date'] = self.get_decision_values(main_details_soup)
-                data['council_decision'] = f"{data['appeal_decision']} {data['appeal_decision_date']}"
+                main_field_tags = main_details_soup.select('div > span')
+                if main_field_tags:
+                    main_field_titles = [tag.get_text().strip() for tag in main_field_tags if tag.get_text().strip()]
+                    for title in main_field_titles:
+                        key = self.format_title(title)
+                        raw_value = self.get_table_value(main_details_soup, title)
+                        value = self.clean_substring(raw_value)
 
-                data['application_type'] = self.get_table_value(main_details_soup, 'Application Type')
-                data['site_address'] = self.get_table_value(main_details_soup, 'Site Address')
-                data['proposal'] = self.get_table_value(main_details_soup, 'Proposal')
-                data['appeal_submitted'] = self.get_table_value(main_details_soup, 'Appeal Submitted?')
-                data['appeal_date_lodged'] = self.get_table_value(main_details_soup, 'Appeal Lodged')
+                        data.update({key:value})
 
             if dates_soup:
-                data['received'] = self.get_table_value(dates_soup, 'Received?')
-                data['registered'] = self.get_table_value(dates_soup, 'Registered')
-                data['decision_expiry'] = self.get_table_value(dates_soup, 'Decision Expiry')
+                date_field_tags = dates_soup.select('div > span')
+                if date_field_tags:
+                    date_field_tags = [tag.get_text().strip() for tag in date_field_tags if tag.get_text().strip()]
+                    data.update({title.replace(' ', '_').lower(): self.get_table_value(dates_soup, title)
+                                 for title in date_field_tags})
 
             if document:
                 data['easting'] = self.get_document_values(document, r'Easting \(x\) (\d+)Northing')
                 data['northing'] = self.get_document_values(document, r"\(y\) (\d+)")
                 data['planning_portal_reference'] = self.get_document_values(document, r"(PP-\d{7})")
 
-            data_list.append(data)
-
-        return data_list
+        except Exception as e:
+            logging.error(f'parse() error: {str(e)}')
+        finally:
+            return data
 
     @staticmethod
     def get_document_values(document, pattern: str) -> str:
@@ -139,3 +124,14 @@ class WandsworthGovUkParsingStrategy(ParsingStrategy):
             logging.error(str(e))
 
         return decision_text, decision_date
+
+    @staticmethod
+    def format_title(title: str):
+        filtered_string = ''.join([char for char in title if char.isalpha()])
+        formatted_title = filtered_string.strip().replace(' ', '_')
+
+        return formatted_title
+
+    @staticmethod
+    def clean_substring(substring):
+        return re.sub(r'\s', substring, ' ')

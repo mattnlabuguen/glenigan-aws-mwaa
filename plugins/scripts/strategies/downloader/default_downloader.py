@@ -4,7 +4,7 @@ from requests.exceptions import HTTPError, ConnectionError
 import urllib3
 from retrying import retry
 
-from scripts.strategies.downloader.downloader import DownloaderStrategy
+from scripts.strategies.base.downloader import DownloaderStrategy
 
 urllib3.disable_warnings()
 
