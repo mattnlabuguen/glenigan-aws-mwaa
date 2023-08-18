@@ -24,12 +24,12 @@ date_today = datetime.now().strftime('%Y-%m-%dT%H%M%S')
 def wandsworth():
     @task()
     def get_sources():
-        application_urls = crawler.get_sources(max_pages=max_pages)
-        return application_urls
+        application_sources = crawler.get_sources(max_pages=max_pages)
+        return application_sources
 
     @task()
-    def crawl(application_urls: list) -> list:
-        raw_data = crawler.crawl(application_urls=application_urls)
+    def crawl(application_sources: list) -> list:
+        raw_data = crawler.crawl(planning_application_sources=application_sources)
         return raw_data
 
     @task()
@@ -44,12 +44,12 @@ def wandsworth():
 
     @task()
     def dump_raw_data(raw_data: list) -> list:
-        file_name = f'raw_wandsworth_{date_today}'
+        file_name = f'raw_wandsworth_data_{date_today}'
         file_handler.dump(raw_data, file_name)
 
     @task()
     def write_to_csv(parsed_data: list) -> list:
-        file_name = f'final_wandsworth_{date_today}'
+        file_name = f'parsed_wandsworth_data_{date_today}'
         writer.write(parsed_data, file_name)
 
     sources = get_sources()
