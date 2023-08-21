@@ -6,16 +6,15 @@ from urllib.parse import urlencode, quote_plus
 from bs4 import BeautifulSoup
 
 from scripts.strategies.base.crawler import CrawlingStrategy
-from scripts.strategies.downloader.default_downloader import DefaultDownloader
+from scripts.strategies.downloader.zyte_downloader import ZyteDownloader
 from scripts.strategies.utils.bs4_utils import clean_href, get_href
 
 
 class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
     def __init__(self):
-        self.downloader = DefaultDownloader()
+        self.downloader = ZyteDownloader(country='uk')
         self.base_application_url = 'https://planning.wandsworth.gov.uk/Northgate/PlanningExplorer/Generic/'
         self.general_search_url = 'https://planning.wandsworth.gov.uk/Northgate/PlanningExplorer/GeneralSearch.aspx'
-
         self.post_request_headers = {
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,'
                       '*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -74,7 +73,6 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
             date_end: datetime = datetime.now(),
             max_pages=10
     ) -> list:
-        planning_application_sources = []
         viewstate = None
         viewstate_generator = None
         event_validation = None
@@ -101,7 +99,9 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
                 raise Exception('Failed to get first page data')
 
         except Exception as e:
-            logging.error(f'get_sources() error: {str(e)}')
+            error_message = f'get_sources() error: {str(e)}'
+            logging.error(error_message)
+            raise Exception(error_message)
 
         return planning_application_sources
 
@@ -143,7 +143,6 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
                 }
 
                 main_page_data = self.download(source)
-
                 if main_page_data:
                     planning_application_data['main_page_data'] = main_page_data
                     main_page_soup = BeautifulSoup(main_page_data, 'lxml')
@@ -154,10 +153,14 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
 
                     if document_urls:
                         planning_application_data.update(document_urls)
+                else:
+                    raise Exception('Failed to get main page data')
 
-            raw_data_list.append(planning_application_data)
+                raw_data_list.append(planning_application_data)
         except Exception as e:
-            logging.error(f'crawl() error: {str(e)}')
+            error_message = f'crawl() error: {str(e)}'
+            logging.error(error_message)
+            raise Exception(error_message)
 
         return raw_data_list
 
@@ -220,6 +223,7 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
     def _get_document_data(self, soup: BeautifulSoup):
         document_urls = {}
         documents_page_url = get_href(soup, 'a[title="Link to View Related Documents"]')
+        application_form_document_data = None
         if documents_page_url:
             documents_page_data = self.download(documents_page_url)
             if documents_page_data:
