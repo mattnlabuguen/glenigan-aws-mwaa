@@ -5,9 +5,9 @@ from urllib.parse import urlencode, quote_plus
 
 from bs4 import BeautifulSoup
 
-from scripts.strategies.base.crawler import CrawlingStrategy
-from scripts.strategies.downloader.zyte_downloader import ZyteDownloader
-from scripts.strategies.utils.bs4_utils import clean_href, get_href
+from scripts.base.crawler import CrawlingStrategy
+from scripts.downloader.zyte_downloader import ZyteDownloader
+from scripts.utils.bs4_utils import clean_href, get_href
 
 
 class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
@@ -27,15 +27,6 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
         }
 
     def download(self, url, timeout=100, headers=None, cookies=None, data=None, is_document=False):
-        """
-        :param url: The URL to download content from.
-        :param timeout: The timeout for the request in seconds.
-        :param headers: Custom headers to be included in the request.
-        :param cookies: Cookies to be included in the request.
-        :param data: Data to be sent in the request body *(for POST requests)*.
-        :param is_document: Boolean to check what type of content the method returns.
-        :return: Returns downloaded content from the URL *(in bytes or string)*.
-        """
         raw_data = None
 
         if not isinstance(headers, dict):
@@ -67,12 +58,10 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
 
         return raw_data
 
-    def get_sources(
-            self,
-            date_start: datetime = datetime.now() - timedelta(days=6 * 30),  # Six months ago
-            date_end: datetime = datetime.now(),
-            max_pages=10
-    ) -> list:
+    def get_sources(self, months_ago: int = 6) -> list:
+        date_start = datetime.now() - timedelta(days=30 * months_ago)
+        date_end = datetime.now()
+
         viewstate = None
         viewstate_generator = None
         event_validation = None
@@ -164,15 +153,15 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
 
         return raw_data_list
 
-    def _get_planning_application_sources(self, first_page_data: str, max_pages: int = 10) -> list:
-        logging.info(f'Getting all planning application sources until page {max_pages}')
+    def _get_planning_application_sources(self, first_page_data: str) -> list:
+        logging.info(f'Getting all planning application sources...')
 
         first_page_soup = BeautifulSoup(first_page_data, 'lxml')
         planning_application_sources = self._get_search_result_data(first_page_soup)
         next_url = self._get_next_url(first_page_soup)
         current_page = 1
 
-        while current_page < max_pages:
+        while next_url:
             logging.info(f'On page {current_page}')
             page_data = self.download(next_url)
             if page_data:

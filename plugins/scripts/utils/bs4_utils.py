@@ -2,6 +2,7 @@ import re
 
 from bs4 import BeautifulSoup
 
+
 def get_href(soup: BeautifulSoup, bs_selector: str) -> str:
     """
     :param soup: BeautifulSoup object

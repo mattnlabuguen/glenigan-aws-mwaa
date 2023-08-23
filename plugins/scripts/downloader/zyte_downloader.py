@@ -7,7 +7,7 @@ from requests.exceptions import HTTPError, ConnectionError
 import urllib3
 from retrying import retry
 
-from scripts.strategies.base.downloader import DownloaderStrategy
+from scripts.base.downloader import DownloaderStrategy
 
 urllib3.disable_warnings()
 
@@ -39,7 +39,7 @@ class ZyteDownloader(DownloaderStrategy):
         except HTTPError:
             raise HTTPError
 
-    @retry(stop_max_attempt_number=max_retries, wait_fixed=retry_delay, retry_on_exception=ConnectionError)
+    @retry(stop_max_attempt_number=max_retries, wait_fixed=retry_delay)
     def post(self, url, timeout=100, headers=None, cookies=None, data=None):
         try:
             response = self.requester.post(url, timeout=timeout, headers=headers, cookies=cookies, data=data)

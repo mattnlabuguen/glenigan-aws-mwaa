@@ -1,10 +1,11 @@
 import os
 import pickle
 
+
 class FilePickler:
     def __init__(self):
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        pickle_file_path = os.path.join(script_dir, '../../output')
+        pickle_file_path = os.path.join(script_dir, '../output')
         self.pickle_file_path = pickle_file_path
 
     def load(self, file_name: str):
@@ -15,5 +16,5 @@ class FilePickler:
         return raw_data_list
 
     def dump(self, data: list, file_name: str):
-        with open(f'{self.output_path}/{file_name}.pkl', "wb") as pickle_file:
+        with open(f'{self.pickle_file_path}/{file_name}.pkl', "wb") as pickle_file:
             pickle.dump(data, pickle_file)

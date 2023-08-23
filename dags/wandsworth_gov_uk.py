@@ -4,15 +4,15 @@ from datetime import datetime
 from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 
-from scripts.strategies.utils.strategy_utils import get_parsing_strategy, get_crawling_strategy
-from scripts.strategies.file_handler.file_pickler import FilePickler
-from scripts.strategies.file_handler.csv_writer import CsvWriter
+from scripts.utils.strategy_utils import get_parsing_strategy, get_crawling_strategy
+from scripts.file_handler.file_pickler import FilePickler
+from scripts.file_handler.csv_writer import CsvWriter
 
 default_args = {
     'owner': 'BCI Central'
 }
 website_name = 'planning.wandsworth.gov.uk'
-max_pages = 1
+months_ago = 6
 
 crawler = get_crawling_strategy(website_name=website_name)
 parser = get_parsing_strategy(website_name=website_name)
@@ -20,11 +20,12 @@ file_handler = FilePickler()
 writer = CsvWriter()
 date_today = datetime.now().strftime('%Y-%m-%dT%H%M%S')
 
+
 @dag(default_args=default_args, start_date=days_ago(2), tags=['glenigan'])
-def wandsworth():
+def wandsworth_gov_uk():
     @task()
     def get_sources():
-        application_sources = crawler.get_sources(max_pages=max_pages)
+        application_sources = crawler.get_sources(months_ago=months_ago)
         return application_sources
 
     @task()
@@ -58,4 +59,4 @@ def wandsworth():
     parsed_data_list = parse(raw_data_list)
     write_to_csv(parsed_data_list)
 
-wandsworth_taskflow = wandsworth()
+wandsworth_taskflow = wandsworth_gov_uk()
