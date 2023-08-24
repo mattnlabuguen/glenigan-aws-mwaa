@@ -82,8 +82,7 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
                                 '(viewstate, viewstate_generator, or event_validation)')
 
             if first_page_data:
-                planning_application_sources = self._get_planning_application_sources(first_page_data,
-                                                                                      max_pages=max_pages)
+                planning_application_sources = self._get_planning_application_sources(first_page_data)
             else:
                 raise Exception('Failed to get first page data')
 
@@ -100,58 +99,57 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
             date_start: datetime,
             date_end: datetime,
     ) -> str:
+        from_date = date_start.strftime('%d/%m/%Y')
+        to_date = date_end.strftime('%d/%m/%Y')
 
         search_form_data = {
             'cboSelectDateValue': 'DATE_RECEIVED',
             'cboMonths': '1',
             'cboDays': '1',
             'rbGroup': 'rbRange',
-            'dateStart': date_start.strftime('%d/%m/%Y'),
-            'dateEnd': date_end.strftime('%d/%m/%Y'),
+            'dateStart': from_date,
+            'dateEnd': to_date,
             'csbtnSearch': 'Search',
         }
-
+        logging.info(f'Requesting data from {from_date} to {to_date} to {search_form_data}')
         complete_form_data = f'{first_page_form_data}&{urlencode(search_form_data)}'
         first_page_data = self.download(self.general_search_url, headers=self.post_request_headers,
                                         data=complete_form_data)
 
         return first_page_data
 
-    def crawl(self, planning_application_sources: list) -> list:
+    def crawl(self, planning_application_source: str) -> list:
         logging.info('Getting all page data from each source...')
-        raw_data_list = []
         try:
-            for source in planning_application_sources:
-                logging.info(f'Page: {source}')
-                planning_application_data = {
-                    'main_page_data': None,
-                    'dates_page_data': None,
-                    'application_form_document_data': None,
-                    'source': source,
-                    'date_captured': datetime.now().strftime('%Y-%m-%dT%H%M%S')
-                }
+            logging.info(f'Page: {planning_application_source}')
+            planning_application_data = {
+                'main_page_data': None,
+                'dates_page_data': None,
+                'application_form_document_data': None,
+                'source': planning_application_source,
+                'date_captured': datetime.now().strftime('%Y-%m-%dT%H%M%S')
+            }
 
-                main_page_data = self.download(source)
-                if main_page_data:
-                    planning_application_data['main_page_data'] = main_page_data
-                    main_page_soup = BeautifulSoup(main_page_data, 'lxml')
+            main_page_data = self.download(planning_application_source)
+            if main_page_data:
+                planning_application_data['main_page_data'] = main_page_data
+                main_page_soup = BeautifulSoup(main_page_data, 'lxml')
 
-                    planning_application_data['dates_page_data'] = self._get_dates_page_data(main_page_soup)
-                    document_urls, planning_application_data['application_form_document_data'] = \
-                        self._get_document_data(main_page_soup)
+                planning_application_data['dates_page_data'] = self._get_dates_page_data(main_page_soup)
+                document_urls, planning_application_data['application_form_document_data'] = \
+                    self._get_document_data(main_page_soup)
 
-                    if document_urls:
-                        planning_application_data.update(document_urls)
-                else:
-                    raise Exception('Failed to get main page data')
+                if document_urls:
+                    planning_application_data.update(document_urls)
+            else:
+                raise Exception('Failed to get main page data')
 
-                raw_data_list.append(planning_application_data)
         except Exception as e:
             error_message = f'crawl() error: {str(e)}'
             logging.error(error_message)
             raise Exception(error_message)
 
-        return raw_data_list
+        return planning_application_data
 
     def _get_planning_application_sources(self, first_page_data: str) -> list:
         logging.info(f'Getting all planning application sources...')
@@ -162,7 +160,7 @@ class WandsworthGovUkCrawlingStrategy(CrawlingStrategy):
         current_page = 1
 
         while next_url:
-            logging.info(f'On page {current_page}')
+            logging.info(f'On page {current_page}: {next_url}')
             page_data = self.download(next_url)
             if page_data:
                 page_soup = BeautifulSoup(page_data, 'lxml')

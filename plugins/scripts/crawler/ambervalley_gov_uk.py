@@ -1,3 +1,4 @@
+import base64
 import logging
 import json
 from datetime import datetime, timedelta
@@ -21,7 +22,6 @@ class AmbervalleyGovUkCrawlingStrategy(CrawlingStrategy):
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                           "(KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
         }
-        self.logging = Logger(self.__class__.__name__).logger
 
     def download(self, url, timeout=10000, headers=None, cookies=None, data=None, is_document=False):
         raw_data = None
@@ -50,17 +50,37 @@ class AmbervalleyGovUkCrawlingStrategy(CrawlingStrategy):
 
         except Exception as e:
             error_message = f'download() error: {str(e)}'
-            self.logging.error(error_message)
+            logging.error(error_message)
             raise Exception(error_message)
 
         return raw_data
 
     def get_sources(self, months_ago: int = 1) -> list:
-        self.logging.info('Getting reference numbers...')
+        logging.info('Getting reference numbers...')
 
         date_start = datetime.now() - timedelta(days=30 * months_ago)
         date_end = datetime.now()
 
+        reference_numbers = []
+        try:
+            # If the months_ago value is greater than 4, we need to split the request into multiple requests
+            # because the server times out if the request is too long.
+            if months_ago > 4:
+                for i in range(0, months_ago, 4):
+                    date_start = date_start + timedelta(days=30 * i)
+                    date_end = date_start + timedelta(days=30 * (i + 4))
+                    reference_numbers.extend(self._get_reference_numbers(date_start, date_end))
+            else:
+                reference_numbers.extend(self._get_reference_numbers(date_start, date_end))
+
+        except Exception as e:
+            error_message = f'get_sources() error: {str(e)}'
+            logging.error(error_message)
+            raise Exception(error_message)
+
+        return reference_numbers
+
+    def _get_reference_numbers(self, date_start: datetime, date_end: datetime) -> list:
         reference_numbers = []
         try:
             request_path = '/DevConJSON.asmx/PlanAppsByAddressKeyword'
@@ -70,43 +90,41 @@ class AmbervalleyGovUkCrawlingStrategy(CrawlingStrategy):
             to_date = date_end.strftime('%d/%b/%Y')
 
             form_data = f"keyWord=&fromDate={from_date}&toDate={to_date}"
-            self.logging.info(f'Requesting data from {from_date} to {to_date} to {request_url}')
+            logging.info(f'Requesting data from {from_date} to {to_date} to {request_url}')
             search_data = self.download(request_url, headers=self.post_request_headers, timeout=300000, data=form_data)
 
             if search_data:
                 json_data = json.loads(search_data)
                 if json_data and isinstance(json_data, list):
                     reference_numbers = [data['refVal'] for data in json_data if 'refVal' in data and data['refVal']]
-                    self.logging.info(f'Found {len(reference_numbers)} reference numbers')
+                    logging.info(f'Found {len(reference_numbers)} reference numbers')
             else:
                 raise Exception('No data found')
-
         except Exception as e:
-            error_message = f'get_sources() error: {str(e)}'
-            self.logging.error(error_message)
+            error_message = f'_get_reference_numbers() error: {str(e)}'
+            logging.error(error_message)
             raise Exception(error_message)
 
         return reference_numbers
 
-    def crawl(self, reference_numbers: list) -> list:
-        self.logging.info('Getting data from each source...')
-        raw_data_list = []
-        for ref_val in reference_numbers:
-            try:
-                self.logging.info(f'Getting data for reference number: {ref_val}')
-                planning_application_data = {
-                    'application_details': self._get_planning_application_details(ref_val),
-                    'application_form_document': self._get_planning_application_document(ref_val),
-                    'date_captured': datetime.now().strftime('%Y-%m-%dT%H%M%S')
-                }
-                raw_data_list.append(planning_application_data)
+    def crawl(self, ref_val: str) -> dict:
+        logging.info('Getting data from each source...')
+        raw_data = None
+        try:
+            logging.info(f'Getting data for reference number: {ref_val}')
+            planning_application_data = {
+                'application_details': self._get_planning_application_details(ref_val),
+                'application_form_document': self._get_planning_application_document(ref_val),
+                'date_captured': datetime.now().strftime('%Y-%m-%dT%H%M%S')
+            }
+            raw_data = planning_application_data
 
-            except Exception as e:
-                error_message = f'crawl() error: {str(e)}'
-                self.logging.error(error_message)
-                raise Exception(error_message)
+        except Exception as e:
+            error_message = f'crawl() error: {str(e)}'
+            logging.error(error_message)
+            raise Exception(error_message)
 
-        return raw_data_list
+        return raw_data
 
     def _get_planning_application_details(self, ref_val: str) -> dict:
         planning_application_details = dict(data=None, source=None)
@@ -121,7 +139,7 @@ class AmbervalleyGovUkCrawlingStrategy(CrawlingStrategy):
                     planning_application_details['data'] = json_data
                     planning_application_details['source'] = request_url
             except json.decoder.JSONDecodeError as e:
-                self.logging.error(f'_get_planning_application_details() error: {str(e)}')
+                logging.error(f'_get_planning_application_details() error: {str(e)}')
 
         return planning_application_details
 
@@ -148,12 +166,13 @@ class AmbervalleyGovUkCrawlingStrategy(CrawlingStrategy):
 
                     document_data = self.download(document_url, is_document=True)
                     if document_data:
-                        planning_application_document['data'] = document_data
+                        encoded_document = base64.b64encode(document_data).decode('utf-8')
+                        planning_application_document['data'] = encoded_document
                         planning_application_document['source'] = document_url
 
             except json.decoder.JSONDecodeError as e:
-                self.logging.error(f'_get_planning_application_document() error: {str(e)}')
+                logging.error(f'_get_planning_application_document() error: {str(e)}')
         else:
-            self.logging.info('No document found for this planning application.')
+            logging.info('No document found for this planning application.')
 
         return planning_application_document

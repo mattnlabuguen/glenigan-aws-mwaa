@@ -18,7 +18,7 @@ crawler = get_crawling_strategy(website_name=website_name)
 parser = get_parsing_strategy(website_name=website_name)
 file_handler = FilePickler()
 writer = CsvWriter()
-date_today = datetime.now().strftime('%Y-%m-%dT%H%M%S')
+date_today = datetime.now().strftime('%Y-%m-%d')
 
 
 @dag(default_args=default_args, start_date=days_ago(2), tags=['glenigan'])
@@ -26,21 +26,16 @@ def wandsworth_gov_uk():
     @task()
     def get_sources():
         application_sources = crawler.get_sources(months_ago=months_ago)
-        return application_sources
+        return application_sources[0:1023]  # Limit to 1024 items as the airflow task limit is 1024.
 
     @task()
-    def crawl(application_sources: list) -> list:
-        raw_data = crawler.crawl(planning_application_sources=application_sources)
+    def crawl(application_source: str) -> dict:
+        raw_data = crawler.crawl(planning_application_source=application_source)
         return raw_data
 
     @task()
-    def parse(raw_data: list) -> list:
-        processed_data = []
-        for data in raw_data:
-            logging.info(str(data))
-            parsed_data = parser.parse(data)
-            processed_data.append(parsed_data)
-
+    def parse(raw_data: dict) -> dict:
+        processed_data = parser.parse(raw_data)
         return processed_data
 
     @task()
@@ -54,9 +49,10 @@ def wandsworth_gov_uk():
         writer.write(parsed_data, file_name)
 
     sources = get_sources()
-    raw_data_list = crawl(sources)
+    raw_data_list = crawl.expand(application_source=sources)
     dump_raw_data(raw_data_list)
-    parsed_data_list = parse(raw_data_list)
+    parsed_data_list = parse.expand(raw_data=raw_data_list)
     write_to_csv(parsed_data_list)
 
-wandsworth_taskflow = wandsworth_gov_uk()
+
+wandsworth_dag = wandsworth_gov_uk()
