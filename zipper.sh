@@ -6,8 +6,5 @@
 output_zip="plugins.zip"
 source_dir="plugins"
 
-excluded_files=("*.pyc")
-excluded_dirs=("__pycache__", "output")
-
-zip -r "$output_zip" "$source_dir" -x "${excluded_files[@]}" "${excluded_folders[@]}"
+zip -r $output_zip $(find $source_dir -type d -name "__pycache__" -prune -o -print)
 echo "Zip process complete."

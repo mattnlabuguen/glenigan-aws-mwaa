@@ -11,7 +11,7 @@ from scripts.parser.defaults import Defaults
 
 
 class AmbervalleyGovUkParsingStrategy(ParsingStrategy):
-    def parse(self, data: str) -> dict:
+    def parse(self, data: dict) -> dict:
         parsed_data = {}
         excluded_keys = ['date8_week']
         try:

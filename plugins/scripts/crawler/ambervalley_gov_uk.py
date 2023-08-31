@@ -57,12 +57,10 @@ class AmbervalleyGovUkCrawlingStrategy(CrawlingStrategy):
 
     def get_sources(self, months_ago: int = 1) -> list:
         logging.info('Getting reference numbers...')
-
-        date_start = datetime.now() - timedelta(days=30 * months_ago)
-        date_end = datetime.now()
-
         reference_numbers = []
         try:
+            date_start = datetime.now() - timedelta(days=30 * months_ago)
+            date_end = datetime.now()
             # If the months_ago value is greater than 4, we need to split the request into multiple requests
             # because the server times out if the request is too long.
             if months_ago > 4:
