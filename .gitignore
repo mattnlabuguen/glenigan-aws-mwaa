@@ -5,3 +5,10 @@ dags/**/*.pyc
 /logs
 /db-data
 .DS_Store
+
+__pycache__/
+.idea/
+output/
+test/
+proxy_keys.json
+zyte-ca.crt

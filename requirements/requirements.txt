@@ -2,3 +2,15 @@
 
 apache-airflow-providers-snowflake==4.2.0
 apache-airflow-providers-mysql==5.1.1
+apache-airflow-providers-amazon
+beautifulsoup4
+certifi
+charset-normalizer
+idna
+lxml
+PyPDF2
+requests
+soupsieve
+urllib3
+retrying
+pandas

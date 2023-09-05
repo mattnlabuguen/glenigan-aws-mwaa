@@ -1,0 +1,19 @@
+{
+    "scrapers": [
+        {
+            "website": "planning.wandsworth.gov.uk",
+            "name": "wandsworth_gov_uk",
+            "schedule": "0 0 1 * *"
+        },
+        {
+            "website": "ambervalley.gov.uk",
+            "name": "ambervalley_gov_uk",
+            "schedule": "0 0 1 * *"
+        },
+        {
+            "website": "planning.hillingdon.gov.uk",
+            "name": "hillingdon_gov_uk",
+            "schedule": "0 0 1 * *"
+        }
+    ]
+}
