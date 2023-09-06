@@ -85,7 +85,7 @@ def create_dag(dag_id, schedule, default_args, source_strategy, crawl_strategy, 
             """
             s3_hook = S3Hook(aws_conn_id='aws_default')
             bucket_name = 'bci-mwaa'
-            key = f'output/{dag_id}/{type}/{type}_{context["ds"]}.json'
+            key = f'output/{dag_id}/{type}/{context["run_id"]}_{context["ds"]}_{type}.json'
             data = json.dumps(data, indent=4, sort_keys=True, default=str)
             s3_hook.load_string(data, key, bucket_name)
 
@@ -115,11 +115,12 @@ for scraper in mapping['scrapers']:
     crawler = strategy_factory.get_strategy('crawl', name)
     parser = strategy_factory.get_strategy('parse', name)
 
-    create_dag(
-        dag_id=name,
-        schedule=schedule,
-        default_args=default_args,
-        source_strategy=source,
-        crawl_strategy=crawler,
-        parse_strategy=parser
-    )
+    if all([source, crawler, parser]):
+        create_dag(
+            dag_id=name,
+            schedule=schedule,
+            default_args=default_args,
+            source_strategy=source,
+            crawl_strategy=crawler,
+            parse_strategy=parser
+        )
